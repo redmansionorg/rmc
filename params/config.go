@@ -30,9 +30,11 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
 
-	BSCGenesisHash    = common.HexToHash("0x0d21840abff46b96c84b2ac9e10e4f5cdaeb5693cb665db62a2f3b02d2d57b5b")
+	//BSCGenesisHash    = common.HexToHash("0x0d21840abff46b96c84b2ac9e10e4f5cdaeb5693cb665db62a2f3b02d2d57b5b")
+	BSCGenesisHash    = common.HexToHash("0xdea97d21b1225b24aca62f2330caf038d122bf2a794b0f3b4b8634493a718395")
 	ChapelGenesisHash = common.HexToHash("0x6d3c66c5357ec91d5c43af47e234a939b22557cbb552dc45bebbceeed90fbe34")
-	RialtoGenesisHash = common.HexToHash("0xee835a629f9cf5510b48b6ba41d69e0ff7d6ef10f977166ef939db41f59f5501")
+	//RialtoGenesisHash = common.HexToHash("0xee835a629f9cf5510b48b6ba41d69e0ff7d6ef10f977166ef939db41f59f5501")
+	RialtoGenesisHash = common.HexToHash("0xdea97d21b1225b24aca62f2330caf038d122bf2a794b0f3b4b8634493a718395")
 )
 
 func newUint64(val uint64) *uint64 { return &val }
@@ -154,7 +156,8 @@ var (
 	}
 
 	BSCChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(56),
+		//ChainID:             big.NewInt(56),
+		ChainID:             big.NewInt(192),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
 		EIP155Block:         big.NewInt(0),
@@ -247,7 +250,7 @@ var (
 
 	// used to test hard fork upgrade, following https://github.com/bnb-chain/bsc-genesis-contract/blob/master/genesis.json
 	RialtoChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(714),
+		ChainID:             big.NewInt(192),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
 		EIP155Block:         big.NewInt(0),
@@ -283,8 +286,8 @@ var (
 		PascalTime:          newUint64(0),
 		PragueTime:          newUint64(0),
 		// TODO: set them to `0` when passed on the mainnet
-		LorentzTime: nil,
-		MaxwellTime: nil,
+		LorentzTime:         newUint64(0),
+		MaxwellTime:         newUint64(0),
 
 		Parlia: &ParliaConfig{},
 		BlobScheduleConfig: &BlobScheduleConfig{
@@ -552,7 +555,7 @@ var (
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
 	MainnetChainConfig.ChainID.String(): "mainnet",
-	BSCChainConfig.ChainID.String():     "bsc",
+	BSCChainConfig.ChainID.String():     "rmc",
 	ChapelChainConfig.ChainID.String():  "chapel",
 	RialtoChainConfig.ChainID.String():  "rialto",
 }

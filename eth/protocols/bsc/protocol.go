@@ -16,7 +16,7 @@ const (
 
 // ProtocolName is the official short name of the `bsc` protocol used during
 // devp2p capability negotiation.
-const ProtocolName = "bsc"
+const ProtocolName = "rmc"
 
 // ProtocolVersions are the supported versions of the `bsc` protocol (first
 // is primary).

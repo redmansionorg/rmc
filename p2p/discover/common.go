@@ -51,7 +51,7 @@ type NodeFilterFunc func(*enr.Record) bool
 func ParseEthFilter(chain string) (NodeFilterFunc, error) {
 	var filter forkid.Filter
 	switch chain {
-	case "bsc":
+	case "rmc":
 		filter = forkid.NewStaticFilter(params.BSCChainConfig, core.DefaultBSCGenesisBlock().ToBlock())
 	case "chapel":
 		filter = forkid.NewStaticFilter(params.ChapelChainConfig, core.DefaultChapelGenesisBlock().ToBlock())

@@ -12,5 +12,5 @@ type enrEntry struct {
 
 // ENRKey implements enr.Entry.
 func (e enrEntry) ENRKey() string {
-	return "bsc"
+	return "rmc"
 }

@@ -179,7 +179,7 @@ var (
 	}
 	BSCMainnetFlag = &cli.BoolFlag{
 		Name:     "mainnet",
-		Usage:    "BSC mainnet",
+		Usage:    "RMC mainnet",
 		Category: flags.EthCategory,
 	}
 	ChapelFlag = &cli.BoolFlag{
@@ -2209,7 +2209,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 	switch {
 	case ctx.Bool(BSCMainnetFlag.Name):
 		if !ctx.IsSet(NetworkIdFlag.Name) {
-			cfg.NetworkId = 56
+			cfg.NetworkId = 192
 		}
 		cfg.Genesis = core.DefaultBSCGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.BSCGenesisHash)
@@ -2466,7 +2466,7 @@ func parseNodeType() string {
 		version = append(version, git.Date)
 	}
 	arch := []string{runtime.GOOS, runtime.GOARCH}
-	infos := []string{"BSC", strings.Join(version, "-"), strings.Join(arch, "-"), runtime.Version()}
+	infos := []string{"RMC", strings.Join(version, "-"), strings.Join(arch, "-"), runtime.Version()}
 	return strings.Join(infos, "/")
 }
 
