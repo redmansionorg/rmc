@@ -1,8 +1,8 @@
-## BNB Smart Chain
+## Red Mansion | Right Message Chain
 
-The goal of BNB Smart Chain is to bring programmability and interoperability to BNB Beacon Chain. In order to embrace the existing popular community and advanced technology, it will bring huge benefits by staying compatible with all the existing smart contracts on Ethereum and Ethereum tooling. And to achieve that, the easiest solution is to develop based on go-ethereum fork, as we respect the great work of Ethereum very much.
+The goal of RM Chain is to bring Consensus on Copyright Verification， programmability and interoperability to OTS Block Chain. In order to embrace the existing popular community and advanced technology, it will bring huge benefits by staying compatible with all the existing smart contracts on Ethereum and Ethereum tooling. And to achieve that, the easiest solution is to develop based on go-ethereum fork, as we respect the great work of Ethereum very much.
 
-BNB Smart Chain starts its development based on go-ethereum fork. So you may see many toolings, binaries and also docs are based on Ethereum ones, such as the name "geth".
+RM Chain starts its development based on bsc/go-ethereum fork. So you may see many toolings, binaries and also docs are based on Ethereum ones, such as the name "geth".
 
 [![API Reference](
 https://pkg.go.dev/badge/github.com/ethereum/go-ethereum
@@ -10,9 +10,9 @@ https://pkg.go.dev/badge/github.com/ethereum/go-ethereum
 [![Build Test](https://github.com/bnb-chain/bsc/actions/workflows/build-test.yml/badge.svg)](https://github.com/bnb-chain/bsc/actions)
 [![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/z2VpC455eU)
 
-But from that baseline of EVM compatible, BNB Smart Chain introduces a system of 21 validators with Proof of Staked Authority (PoSA) consensus that can support short block time and lower fees. The most bonded validator candidates of staking will become validators and produce blocks. The double-sign detection and other slashing logic guarantee security, stability, and chain finality.
+But from that baseline of EVM compatible, RM Chain introduces a system of 21 validators with Proof of Staked Authority (PoSA) consensus that can support short block time and lower fees. The most bonded validator candidates of staking will become validators and produce blocks. The double-sign detection and other slashing logic guarantee security, stability, and chain finality.
 
-**The BNB Smart Chain** will be:
+**The RM Chain** will be:
 
 - **A self-sovereign blockchain**: Provides security and safety with elected validators.
 - **EVM-compatible**: Supports all the existing Ethereum tooling along with faster finality and cheaper transaction fees.
@@ -30,16 +30,16 @@ Meanwhile, the PoA protocol is most criticized for being not as decentralized as
 
 Other blockchains, such as EOS and Cosmos both, introduce different types of Deputy Proof of Stake (DPoS) to allow the token holders to vote and elect the validator set. It increases the decentralization and favors community governance. 
 
-To combine DPoS and PoA for consensus, BNB Smart Chain implement a novel consensus engine called Parlia that:
+To combine DPoS and PoA for consensus, RM Chain implement a novel consensus engine called Parlia that:
 
 1. Blocks are produced by a limited set of validators.
 2. Validators take turns to produce blocks in a PoA manner, similar to Ethereum's Clique consensus engine.
-3. Validator set are elected in and out based on a staking based governance on BNB Smart Chain.
+3. Validator set are elected in and out based on a staking based governance on RM Chain.
 4. Parlia consensus engine will interact with a set of [system contracts](https://docs.bnbchain.org/bnb-smart-chain/staking/overview/#system-contracts) to achieve liveness slash, revenue distributing and validator set renewing func.
 
 ## Native Token
 
-BNB will run on BNB Smart Chain in the same way as ETH runs on Ethereum so that it remains as `native token` for BSC. This means,
+BNB will run on RM Chain in the same way as ETH runs on Ethereum so that it remains as `native token` for BSC. This means,
 BNB will be used to:
 
 1. pay `gas` to deploy or invoke Smart Contract on BSC
@@ -80,7 +80,7 @@ directory.
 
 |  Command   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | :--------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`geth`** | Main BNB Smart Chain client binary. It is the entry point into the BSC network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It has the same and more RPC and other interface as go-ethereum and can be used by other processes as a gateway into the BSC network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `geth --help` and the [CLI page](https://geth.ethereum.org/docs/interface/command-line-options) for command line options. |
+| **`geth`** | Main RM Chain client binary. It is the entry point into the BSC network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It has the same and more RPC and other interface as go-ethereum and can be used by other processes as a gateway into the BSC network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `geth --help` and the [CLI page](https://geth.ethereum.org/docs/interface/command-line-options) for command line options. |
 |   `clef`   | Stand-alone signing tool, which can be used as a backend signer for `geth`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 |  `devp2p`  | Utilities to interact with nodes on the networking layer, without running a full blockchain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 |  `abigen`  | Source code generator to convert Ethereum contract definitions into easy to use, compile-time type-safe Go packages. It operates on plain [Ethereum contract ABIs](https://docs.soliditylang.org/en/develop/abi-spec.html) with expanded functionality if the contract bytecode is also available. However, it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://geth.ethereum.org/docs/dapp/native-bindings) page for details.                                                                                               |
@@ -231,7 +231,7 @@ running web servers, so malicious web pages could try to subvert locally availab
 APIs!**
 
 ### Operating a private network
-- [BSC-Deploy](https://github.com/bnb-chain/node-deploy/): deploy tool for setting up BNB Smart Chain.
+- [BSC-Deploy](https://github.com/bnb-chain/node-deploy/): deploy tool for setting up RM Chain.
 
 ## Running a bootnode
 
