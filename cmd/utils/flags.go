@@ -1259,6 +1259,55 @@ Please note that --` + MetricsHTTPFlag.Name + ` must be set to start the server.
 		Value:    fakebeacon.DefaultPort,
 		Category: flags.APICategory,
 	}
+
+	// OTS (OpenTimestamps) flags
+	OTSEnabledFlag = &cli.BoolFlag{
+		Name:     "ots.enabled",
+		Usage:    "Enable OTS (OpenTimestamps) module for Bitcoin-anchored timestamping",
+		Category: flags.OTSCategory,
+	}
+	OTSModeFlag = &cli.StringFlag{
+		Name:     "ots.mode",
+		Usage:    "OTS operation mode: producer, watcher, or full",
+		Value:    "full",
+		Category: flags.OTSCategory,
+	}
+	OTSDataDirFlag = &cli.StringFlag{
+		Name:     "ots.datadir",
+		Usage:    "Data directory for OTS storage (relative to node datadir)",
+		Value:    "ots",
+		Category: flags.OTSCategory,
+	}
+	OTSContractFlag = &cli.StringFlag{
+		Name:     "ots.contract",
+		Usage:    "OTSAnchor contract address",
+		Value:    "0x0000000000000000000000000000000000001001",
+		Category: flags.OTSCategory,
+	}
+	OTSTriggerHourFlag = &cli.UintFlag{
+		Name:     "ots.trigger-hour",
+		Usage:    "UTC hour for daily batch trigger (0-23)",
+		Value:    0,
+		Category: flags.OTSCategory,
+	}
+	OTSFallbackBlocksFlag = &cli.Uint64Flag{
+		Name:     "ots.fallback-blocks",
+		Usage:    "Number of blocks before fallback trigger",
+		Value:    28800,
+		Category: flags.OTSCategory,
+	}
+	OTSConfirmationsFlag = &cli.Uint64Flag{
+		Name:     "ots.confirmations",
+		Usage:    "Block confirmations before processing",
+		Value:    15,
+		Category: flags.OTSCategory,
+	}
+	OTSMaxRetriesFlag = &cli.UintFlag{
+		Name:     "ots.max-retries",
+		Usage:    "Maximum OTS submission retries",
+		Value:    3,
+		Category: flags.OTSCategory,
+	}
 )
 
 var (
@@ -1277,6 +1326,18 @@ var (
 		DBEngineFlag,
 		StateSchemeFlag,
 		HttpHeaderFlag,
+	}
+
+	// OTSFlags is the flag group of all OTS (OpenTimestamps) flags.
+	OTSFlags = []cli.Flag{
+		OTSEnabledFlag,
+		OTSModeFlag,
+		OTSDataDirFlag,
+		OTSContractFlag,
+		OTSTriggerHourFlag,
+		OTSFallbackBlocksFlag,
+		OTSConfirmationsFlag,
+		OTSMaxRetriesFlag,
 	}
 )
 
@@ -2332,6 +2393,32 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 			cfg.VMTrace = name
 			cfg.VMTraceJsonConfig = ctx.String(VMTraceJsonConfigFlag.Name)
 		}
+	}
+
+	// OTS (OpenTimestamps) config
+	if ctx.IsSet(OTSEnabledFlag.Name) {
+		cfg.OTS.Enabled = ctx.Bool(OTSEnabledFlag.Name)
+	}
+	if ctx.IsSet(OTSModeFlag.Name) {
+		cfg.OTS.Mode = ctx.String(OTSModeFlag.Name)
+	}
+	if ctx.IsSet(OTSDataDirFlag.Name) {
+		cfg.OTS.DataDir = ctx.String(OTSDataDirFlag.Name)
+	}
+	if ctx.IsSet(OTSContractFlag.Name) {
+		cfg.OTS.ContractAddress = ctx.String(OTSContractFlag.Name)
+	}
+	if ctx.IsSet(OTSTriggerHourFlag.Name) {
+		cfg.OTS.TriggerHour = uint8(ctx.Uint(OTSTriggerHourFlag.Name))
+	}
+	if ctx.IsSet(OTSFallbackBlocksFlag.Name) {
+		cfg.OTS.FallbackBlocks = ctx.Uint64(OTSFallbackBlocksFlag.Name)
+	}
+	if ctx.IsSet(OTSConfirmationsFlag.Name) {
+		cfg.OTS.Confirmations = ctx.Uint64(OTSConfirmationsFlag.Name)
+	}
+	if ctx.IsSet(OTSMaxRetriesFlag.Name) {
+		cfg.OTS.MaxRetries = uint32(ctx.Uint(OTSMaxRetriesFlag.Name))
 	}
 }
 

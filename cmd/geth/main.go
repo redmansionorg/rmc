@@ -307,6 +307,7 @@ func init() {
 		debug.Flags,
 		metricsFlags,
 		fakeBeaconFlags,
+		utils.OTSFlags,
 	)
 	flags.AutoEnvVars(app.Flags, "GETH")
 

@@ -59,3 +59,29 @@ FilePath = "bsc.log"
 MaxBytesSize = 10485760
 Level = "info"
 FileRoot = ""
+
+# OTS (OpenTimestamps) Module Configuration
+# Bitcoin-anchored timestamping for RMC blockchain events
+[Eth.OTS]
+# Enable the OTS module (default: false)
+Enabled = false
+# Operation mode: "producer", "watcher", or "full" (default: "full")
+Mode = "full"
+# Data directory relative to node datadir (default: "ots")
+DataDir = "ots"
+# OTSAnchor contract address
+ContractAddress = "0x0000000000000000000000000000000000001001"
+# UTC hour for daily batch trigger, 0-23 (default: 0)
+TriggerHour = 0
+# Blocks before fallback trigger (default: 28800, ~24h at 3s/block)
+FallbackBlocks = 28800
+# Maximum OTS submission retries (default: 3)
+MaxRetries = 3
+# Block confirmations before processing (default: 15)
+Confirmations = 15
+# OTS Calendar server URLs
+CalendarURLs = [
+    "https://alice.btc.calendar.opentimestamps.org",
+    "https://bob.btc.calendar.opentimestamps.org",
+    "https://finney.calendar.eternitywall.com"
+]

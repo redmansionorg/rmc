@@ -41,6 +41,7 @@ const (
 	FastNodeCategory     = "FAST NODE"
 	FastFinalityCategory = "FAST FINALITY"
 	BlockHistoryCategory = "BLOCK HISTORY MANAGEMENT"
+	OTSCategory          = "OTS (OPENTIMESTAMPS)"
 )
 
 func init() {

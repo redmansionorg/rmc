@@ -43,6 +43,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/ots/hook"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
@@ -1554,6 +1555,16 @@ func (p *Parlia) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *
 		}
 	}
 
+	// OTS: Invoke FinalizeHook to get OTS system transactions (Fail-Open pattern)
+	if otsTxs := hook.InvokeFinalizeHook(header, state, true); len(otsTxs) > 0 {
+		for _, tx := range otsTxs {
+			if err := p.applyOTSTransaction(tx, state, header, cx, &body.Transactions, &receipts, &header.GasUsed, tracer); err != nil {
+				// Fail-Open: log error but don't block block production
+				log.Error("OTS: Failed to apply OTS transaction", "err", err)
+			}
+		}
+	}
+
 	// should not happen. Once happen, stop the node is better than broadcast the block
 	if header.GasLimit < header.GasUsed {
 		return nil, nil, errors.New("gas consumption of system txs exceed the gas limit")
@@ -2393,4 +2404,115 @@ func applyMessage(
 // proposalKey build a key which is a combination of the block number and the proposer address.
 func proposalKey(header types.Header) string {
 	return header.ParentHash.String() + header.Coinbase.String()
+}
+
+// applyOTSTransaction applies an OTS system transaction to the state.
+// OTS transactions have gasPrice=0 and are executed by coinbase.
+func (p *Parlia) applyOTSTransaction(
+	tx *types.Transaction,
+	state *state.StateDB,
+	header *types.Header,
+	chainContext core.ChainContext,
+	txs *[]*types.Transaction,
+	receipts *[]*types.Receipt,
+	usedGas *uint64,
+	tracer *tracing.Hooks,
+) error {
+	// Verify this is a valid OTS system transaction
+	if tx.GasPrice().Sign() != 0 {
+		return errors.New("OTS transaction must have zero gas price")
+	}
+
+	// Sign the transaction with coinbase
+	signedTx, err := p.signTxFn(accounts.Account{Address: p.val}, tx, p.chainConfig.ChainID)
+	if err != nil {
+		return fmt.Errorf("failed to sign OTS transaction: %w", err)
+	}
+
+	// Set transaction context
+	state.SetTxContext(signedTx.Hash(), len(*txs))
+
+	// Create EVM context (following BSC's pattern for system transactions)
+	blockContext := core.NewEVMBlockContext(header, chainContext, nil)
+	evm := vm.NewEVM(blockContext, state, p.chainConfig, vm.Config{Tracer: tracer})
+	evm.SetTxContext(core.NewEVMTxContext(&core.Message{
+		From:      p.val,
+		GasPrice:  common.Big0,
+		GasFeeCap: common.Big0,
+		GasTipCap: common.Big0,
+	}))
+
+	// Prepare state
+	if p.chainConfig.IsCancun(header.Number, header.Time) {
+		rules := evm.ChainConfig().Rules(header.Number, header.Time >= 0, header.Time)
+		state.Prepare(rules, p.val, header.Coinbase, tx.To(), vm.ActivePrecompiles(rules), tx.AccessList())
+	}
+
+	// Increment nonce
+	state.SetNonce(p.val, state.GetNonce(p.val)+1, tracing.NonceChangeEoACall)
+
+	// Execute the transaction
+	gasUsed, err := p.applyOTSMessage(evm, &core.Message{
+		From:     p.val,
+		To:       tx.To(),
+		Value:    tx.Value(),
+		GasLimit: tx.Gas(),
+		GasPrice: common.Big0,
+		Data:     tx.Data(),
+	}, state, header)
+	if err != nil {
+		log.Error("OTS: Transaction execution failed", "err", err)
+		// Continue with failed receipt for transparency
+	}
+
+	// Create receipt
+	receipt := &types.Receipt{
+		Type:              tx.Type(),
+		TxHash:            signedTx.Hash(),
+		GasUsed:           gasUsed,
+		BlockHash:         header.Hash(),
+		BlockNumber:       header.Number,
+		TransactionIndex:  uint(len(*txs)),
+		ContractAddress:   common.Address{},
+		Logs:              state.GetLogs(signedTx.Hash(), header.Number.Uint64(), header.Hash()),
+		CumulativeGasUsed: *usedGas + gasUsed,
+	}
+	if err != nil {
+		receipt.Status = types.ReceiptStatusFailed
+	} else {
+		receipt.Status = types.ReceiptStatusSuccessful
+	}
+
+	// Update state
+	*txs = append(*txs, signedTx)
+	*receipts = append(*receipts, receipt)
+	*usedGas += gasUsed
+
+	log.Debug("OTS: Transaction applied",
+		"txHash", signedTx.Hash().Hex(),
+		"gasUsed", gasUsed,
+		"status", receipt.Status,
+	)
+
+	return nil
+}
+
+// applyOTSMessage executes an OTS message against the state
+func (p *Parlia) applyOTSMessage(
+	evm *vm.EVM,
+	msg *core.Message,
+	state *state.StateDB,
+	header *types.Header,
+) (uint64, error) {
+	ret, returnGas, err := evm.Call(
+		vm.AccountRef(msg.From),
+		*msg.To,
+		msg.Data,
+		msg.GasLimit,
+		uint256.MustFromBig(msg.Value),
+	)
+	if err != nil {
+		log.Error("OTS: Message execution failed", "ret", string(ret), "err", err)
+	}
+	return msg.GasLimit - returnGas, err
 }

@@ -48,6 +48,56 @@ var FullNodeGPO = gasprice.Config{
 	IgnorePrice:     gasprice.DefaultIgnorePrice,
 }
 
+// OTSConfig contains configuration for the OTS (OpenTimestamps) module.
+// This module provides Bitcoin-anchored timestamping for RMC blockchain events.
+type OTSConfig struct {
+	// Enabled activates the OTS module
+	Enabled bool `toml:",omitempty"`
+
+	// Mode specifies the operation mode: "producer", "watcher", or "full"
+	// - producer: Creates batches and submits to OTS calendars
+	// - watcher: Only monitors and verifies OTS proofs
+	// - full: Both producer and watcher functionality
+	Mode string `toml:",omitempty"`
+
+	// DataDir is the directory for OTS data storage (relative to node datadir)
+	DataDir string `toml:",omitempty"`
+
+	// ContractAddress is the OTSAnchor contract address
+	ContractAddress string `toml:",omitempty"`
+
+	// CalendarURLs are the OTS calendar server URLs
+	CalendarURLs []string `toml:",omitempty"`
+
+	// TriggerHour is the UTC hour for daily batch trigger (0-23)
+	TriggerHour uint8 `toml:",omitempty"`
+
+	// FallbackBlocks is the number of blocks before fallback trigger
+	FallbackBlocks uint64 `toml:",omitempty"`
+
+	// MaxRetries is the maximum number of OTS submission retries
+	MaxRetries uint32 `toml:",omitempty"`
+
+	// Confirmations is the number of block confirmations before processing
+	Confirmations uint64 `toml:",omitempty"`
+}
+
+// DefaultOTSConfig returns the default OTS configuration (disabled by default)
+var DefaultOTSConfig = OTSConfig{
+	Enabled:        false,
+	Mode:           "full",
+	DataDir:        "ots",
+	TriggerHour:    0,
+	FallbackBlocks: 28800, // ~1 day at 3s blocks
+	MaxRetries:     3,
+	Confirmations:  15, // Block confirmations before processing
+	CalendarURLs: []string{
+		"https://alice.btc.calendar.opentimestamps.org",
+		"https://bob.btc.calendar.opentimestamps.org",
+		"https://finney.calendar.eternitywall.com",
+	},
+}
+
 // Defaults contains default settings for use on the BSC main net.
 var Defaults = Config{
 	SyncMode:           SnapSync,
@@ -72,6 +122,7 @@ var Defaults = Config{
 	GPO:                FullNodeGPO,
 	RPCTxFeeCap:        1,                                         // 1 ether
 	BlobExtraReserve:   params.DefaultExtraReserveForBlobRequests, // Extra reserve threshold for blob, blob never expires when -1 is set, default 28800
+	OTS:                DefaultOTSConfig,
 }
 
 //go:generate go run github.com/fjl/gencodec -type Config -formats toml -out gen_config.go
@@ -198,6 +249,9 @@ type Config struct {
 
 	// blob setting
 	BlobExtraReserve uint64
+
+	// OTS module configuration
+	OTS OTSConfig
 }
 
 // CreateConsensusEngine creates a consensus engine for the given chain config.

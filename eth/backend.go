@@ -67,6 +67,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/dnsdisc"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/ots"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
@@ -135,8 +136,9 @@ type Ethereum struct {
 
 	shutdownTracker *shutdowncheck.ShutdownTracker // Tracks if and when the node has shutdown ungracefully
 
-	votePool *vote.VotePool
-	stopCh   chan struct{}
+	votePool  *vote.VotePool
+	stopCh    chan struct{}
+	otsModule *ots.Module // OTS module for OpenTimestamps integration
 }
 
 // New creates a new Ethereum object (including the initialisation of the common Ethereum object),
@@ -445,6 +447,32 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 
 	// Successful startup; push a marker and check previous unclean shutdowns.
 	eth.shutdownTracker.MarkStartup()
+
+	// Initialize OTS module if configured
+	if config.OTS.Enabled {
+		otsConfig := ots.DefaultConfig()
+		otsConfig.Enabled = true
+		otsConfig.Mode = ots.Mode(config.OTS.Mode)
+		otsConfig.DataDir = stack.ResolvePath(config.OTS.DataDir)
+		if config.OTS.ContractAddress != "" {
+			otsConfig.ContractAddress = common.HexToAddress(config.OTS.ContractAddress)
+		}
+		otsConfig.TriggerHour = config.OTS.TriggerHour
+		otsConfig.FallbackBlocks = config.OTS.FallbackBlocks
+		otsConfig.Confirmations = config.OTS.Confirmations
+
+		otsModule, err := ots.NewModule(otsConfig, eth.blockchain, eth.chainDb)
+		if err != nil {
+			log.Error("OTS: Failed to create module", "err", err)
+		} else {
+			eth.otsModule = otsModule
+			if err := otsModule.Start(); err != nil {
+				log.Error("OTS: Failed to start module", "err", err)
+			} else {
+				log.Info("OTS: Module started successfully", "mode", otsConfig.Mode)
+			}
+		}
+	}
 
 	return eth, nil
 }

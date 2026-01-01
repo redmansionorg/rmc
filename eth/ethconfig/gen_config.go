@@ -71,6 +71,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		OverrideMaxwell         *uint64 `toml:",omitempty"`
 		OverrideVerkle          *uint64 `toml:",omitempty"`
 		BlobExtraReserve        uint64
+		OTS                     OTSConfig
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
@@ -127,6 +128,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.OverrideMaxwell = c.OverrideMaxwell
 	enc.OverrideVerkle = c.OverrideVerkle
 	enc.BlobExtraReserve = c.BlobExtraReserve
+	enc.OTS = c.OTS
 	return &enc, nil
 }
 
@@ -187,6 +189,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		OverrideMaxwell         *uint64 `toml:",omitempty"`
 		OverrideVerkle          *uint64 `toml:",omitempty"`
 		BlobExtraReserve        *uint64
+		OTS                     *OTSConfig
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -353,6 +356,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.BlobExtraReserve != nil {
 		c.BlobExtraReserve = *dec.BlobExtraReserve
+	}
+	if dec.OTS != nil {
+		c.OTS = *dec.OTS
 	}
 	return nil
 }
