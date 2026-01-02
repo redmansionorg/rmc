@@ -38,7 +38,7 @@ type Header struct {
 type Processor struct {
 	config    *ots.Config
 	collector *event.Collector
-	otsClient *opentimestamps.Client
+	otsClient opentimestamps.ClientInterface
 	store     *storage.Store
 	chain     BlockchainReader
 
@@ -53,7 +53,7 @@ type Processor struct {
 func NewProcessor(
 	config *ots.Config,
 	collector *event.Collector,
-	otsClient *opentimestamps.Client,
+	otsClient opentimestamps.ClientInterface,
 	store *storage.Store,
 	chain BlockchainReader,
 ) *Processor {
@@ -242,7 +242,6 @@ func (p *Processor) determineBlockRange() (uint64, uint64, error) {
 	}
 
 	// End at safe block (current - confirmations)
-	currentBlock := p.chain.CurrentHeader().Number
 	safeBlock := p.chain.GetSafeBlockNumber()
 
 	if safeBlock < startBlock {

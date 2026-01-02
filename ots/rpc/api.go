@@ -203,7 +203,7 @@ func (api *API) VerifyRUID(ctx context.Context, ruidHex string) (*VerifyResult, 
 		return nil, ErrModuleNotRunning
 	}
 
-	ruid := common.HexToHash(ruidHex)
+	_ = common.HexToHash(ruidHex) // Will be used in full implementation
 
 	// This is a simplified implementation
 	// In production, you might want to add block range hints for efficiency

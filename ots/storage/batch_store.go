@@ -7,12 +7,13 @@
 package storage
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"path/filepath"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 	"github.com/ethereum/go-ethereum/log"
@@ -57,10 +58,13 @@ type Store struct {
 func NewStore(dataDir string, cacheSize int, writeBuffer int) (*Store, error) {
 	dbPath := filepath.Join(dataDir, "batches")
 
-	db, err := leveldb.New(dbPath, cacheSize, writeBuffer, "ots", false)
+	ldb, err := leveldb.New(dbPath, cacheSize, writeBuffer, "ots", false)
 	if err != nil {
 		return nil, err
 	}
+
+	// Wrap with rawdb.NewDatabase to implement full ethdb.Database interface
+	db := rawdb.NewDatabase(ldb)
 
 	return &Store{db: db}, nil
 }
@@ -301,7 +305,9 @@ func makeBlockIndexKey(blockNumber uint64, batchID string) []byte {
 }
 
 func makeBlockIndexPrefix(blockNumber uint64) []byte {
-	return append(prefixBlockIndex, common.Uint64ToBytes(blockNumber)...)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, blockNumber)
+	return append(prefixBlockIndex, buf...)
 }
 
 func makeStatusIndexKey(status ots.BatchStatus, batchID string) []byte {
