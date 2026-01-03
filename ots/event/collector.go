@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/ots"
+	otstypes "github.com/ethereum/go-ethereum/ots/types"
 )
 
 var (
@@ -79,7 +79,7 @@ func NewCollector(
 
 // CollectEvents collects all CopyrightClaimed events in the given block range.
 // Returns events sorted by (BlockNumber, TxIndex, LogIndex, RUID) and deduplicated.
-func (c *Collector) CollectEvents(ctx context.Context, startBlock, endBlock uint64) ([]ots.EventForMerkle, error) {
+func (c *Collector) CollectEvents(ctx context.Context, startBlock, endBlock uint64) ([]otstypes.EventForMerkle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -99,7 +99,7 @@ func (c *Collector) CollectEvents(ctx context.Context, startBlock, endBlock uint
 	}
 
 	// Parse logs into events
-	events := make([]ots.EventForMerkle, 0, len(logs))
+	events := make([]otstypes.EventForMerkle, 0, len(logs))
 	seen := make(map[common.Hash]bool) // For deduplication by RUID
 
 	for _, logEntry := range logs {
@@ -199,7 +199,7 @@ func (c *Collector) queryLogs(ctx context.Context, startBlock, endBlock uint64) 
 }
 
 // parseLog parses a log entry into an EventForMerkle
-func (c *Collector) parseLog(logEntry *types.Log) (*ots.EventForMerkle, error) {
+func (c *Collector) parseLog(logEntry *types.Log) (*otstypes.EventForMerkle, error) {
 	// CopyrightClaimed(bytes32 indexed ruid, bytes32 indexed puid, bytes32 indexed auid, address claimant)
 	// Topics[0] = event signature
 	// Topics[1] = ruid (indexed)
@@ -213,9 +213,9 @@ func (c *Collector) parseLog(logEntry *types.Log) (*ots.EventForMerkle, error) {
 
 	ruid := logEntry.Topics[1]
 
-	event := &ots.EventForMerkle{
+	event := &otstypes.EventForMerkle{
 		RUID: ruid,
-		SortKey: ots.SortKey{
+		SortKey: otstypes.SortKey{
 			BlockNumber: logEntry.BlockNumber,
 			TxIndex:     uint32(logEntry.TxIndex),
 			LogIndex:    uint32(logEntry.Index),
@@ -228,7 +228,7 @@ func (c *Collector) parseLog(logEntry *types.Log) (*ots.EventForMerkle, error) {
 }
 
 // ParseFullEvent parses a log into a full CopyrightClaimedEvent
-func (c *Collector) ParseFullEvent(logEntry *types.Log) (*ots.CopyrightClaimedEvent, error) {
+func (c *Collector) ParseFullEvent(logEntry *types.Log) (*otstypes.CopyrightClaimedEvent, error) {
 	if len(logEntry.Topics) < 4 {
 		return nil, errors.New("invalid log: insufficient topics")
 	}
@@ -244,7 +244,7 @@ func (c *Collector) ParseFullEvent(logEntry *types.Log) (*ots.CopyrightClaimedEv
 		claimant = common.BytesToAddress(logEntry.Data[12:32])
 	}
 
-	event := &ots.CopyrightClaimedEvent{
+	event := &otstypes.CopyrightClaimedEvent{
 		RUID:        ruid,
 		PUID:        puid,
 		AUID:        auid,
@@ -260,7 +260,7 @@ func (c *Collector) ParseFullEvent(logEntry *types.Log) (*ots.CopyrightClaimedEv
 }
 
 // sortEventsByKey sorts events by (BlockNumber, TxIndex, LogIndex, RUID)
-func sortEventsByKey(events []ots.EventForMerkle) {
+func sortEventsByKey(events []otstypes.EventForMerkle) {
 	sort.Slice(events, func(i, j int) bool {
 		// Compare by SortKey first
 		if events[i].SortKey.BlockNumber != events[j].SortKey.BlockNumber {
@@ -278,7 +278,7 @@ func sortEventsByKey(events []ots.EventForMerkle) {
 }
 
 // VerifyNoReorg checks if a reorg occurred by verifying block hashes
-func (c *Collector) VerifyNoReorg(ctx context.Context, events []ots.EventForMerkle) error {
+func (c *Collector) VerifyNoReorg(ctx context.Context, events []otstypes.EventForMerkle) error {
 	// Group events by block number
 	blockHashes := make(map[uint64]common.Hash)
 	for _, event := range events {

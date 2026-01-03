@@ -3,7 +3,7 @@
 # don't need to bother with make.
 
 .PHONY: geth faucet all test truffle-test lint fmt clean devtools help
-.PHONY: docker
+.PHONY: docker ots-test ots-testnet ots-testnet-down
 
 GOBIN = ./build/bin
 GO ?= latest
@@ -40,6 +40,29 @@ truffle-test:
 	sleep 30
 	docker compose -f ./tests/truffle/docker-compose.yml up --exit-code-from truffle-test truffle-test
 	docker compose -f ./tests/truffle/docker-compose.yml down
+
+#? ots-test: Run OTS contract integration test.
+ots-test:
+	docker build . -f ./docker/Dockerfile --target bsc -t bsc
+	docker build . -f ./docker/Dockerfile --target bsc-genesis -t bsc-genesis
+	docker compose -f ./tests/truffle/docker-compose-ots.yml up genesis
+	docker compose -f ./tests/truffle/docker-compose-ots.yml up -d bsc-rpc bsc-validator1
+	sleep 30
+	docker compose -f ./tests/truffle/docker-compose-ots.yml up --exit-code-from ots-test ots-test
+	docker compose -f ./tests/truffle/docker-compose-ots.yml down
+
+#? ots-testnet: Start OTS testnet (keeps running).
+ots-testnet:
+	docker build . -f ./docker/Dockerfile --target bsc -t bsc
+	docker build . -f ./docker/Dockerfile --target bsc-genesis -t bsc-genesis
+	docker compose -f ./tests/truffle/docker-compose-ots.yml up genesis
+	docker compose -f ./tests/truffle/docker-compose-ots.yml up -d bsc-rpc bsc-validator1
+	@echo "OTS Testnet started. RPC available at http://localhost:8545"
+	@echo "To stop: docker compose -f ./tests/truffle/docker-compose-ots.yml down"
+
+#? ots-testnet-down: Stop OTS testnet.
+ots-testnet-down:
+	docker compose -f ./tests/truffle/docker-compose-ots.yml down
 
 #? lint: Run certain pre-selected linters.
 lint: ## Run linters.

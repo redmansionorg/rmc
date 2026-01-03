@@ -37,8 +37,13 @@ type Config struct {
 	// DataDir is the directory for OTS local storage
 	DataDir string
 
-	// ContractAddress is the CopyrightRegistry contract address
-	ContractAddress common.Address
+	// CopyrightRegistryAddress is the CopyrightRegistry contract address (0x9000)
+	// Used for event collection (CopyrightClaimed events)
+	CopyrightRegistryAddress common.Address
+
+	// OTSAnchorAddress is the OTSAnchor contract address (0x9001)
+	// Used for system transaction destination (updateOtsStatus)
+	OTSAnchorAddress common.Address
 
 	// TriggerHour is the UTC hour for daily batch trigger (0-23)
 	TriggerHour uint8
@@ -48,6 +53,9 @@ type Config struct {
 
 	// Confirmations is the number of block confirmations before processing
 	Confirmations uint64
+
+	// SystemTxGasLimit is the gas limit for OTS system transactions
+	SystemTxGasLimit uint64
 
 	// OpenTimestamps settings
 	OTS OTSConfig
@@ -66,6 +74,9 @@ type OTSConfig struct {
 
 	// CalendarServers is the list of calendar server URLs
 	CalendarServers []string
+
+	// Timeout is the timeout for OTS operations (alias for CalendarTimeout)
+	Timeout time.Duration
 
 	// CalendarTimeout is the timeout for calendar operations
 	CalendarTimeout time.Duration
@@ -101,13 +112,15 @@ type ProcessorConfig struct {
 // DefaultConfig returns a Config with default values
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:         false,
-		Mode:            ModeFull,
-		DataDir:         "ots",
-		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000001001"),
-		TriggerHour:     0,
-		FallbackBlocks:  28800, // ~24 hours at 3s/block
-		Confirmations:   15,
+		Enabled:                  false,
+		Mode:                     ModeFull,
+		DataDir:                  "ots",
+		CopyrightRegistryAddress: common.HexToAddress("0x0000000000000000000000000000000000009000"),
+		OTSAnchorAddress:         common.HexToAddress("0x0000000000000000000000000000000000009001"),
+		TriggerHour:              0,
+		FallbackBlocks:   28800, // ~24 hours at 3s/block
+		Confirmations:    15,
+		SystemTxGasLimit: 500000, // 500k gas for system transactions
 		OTS: OTSConfig{
 			BinaryPath: "ots",
 			CalendarServers: []string{
@@ -115,6 +128,7 @@ func DefaultConfig() *Config {
 				"https://bob.btc.calendar.opentimestamps.org",
 				"https://finney.calendar.eternitywall.com",
 			},
+			Timeout:              30 * time.Second,
 			CalendarTimeout:      30 * time.Second,
 			CalendarPollInterval: 5 * time.Minute,
 			BTCConfirmations:     6,
@@ -149,7 +163,11 @@ func (c *Config) Validate() error {
 		return ErrInvalidConfirmations
 	}
 
-	if c.ContractAddress == (common.Address{}) {
+	if c.CopyrightRegistryAddress == (common.Address{}) {
+		return ErrInvalidContractAddress
+	}
+
+	if c.OTSAnchorAddress == (common.Address{}) {
 		return ErrInvalidContractAddress
 	}
 

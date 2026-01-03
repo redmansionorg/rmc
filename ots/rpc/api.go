@@ -20,6 +20,7 @@ import (
 
 var (
 	ErrModuleNotRunning = errors.New("OTS module not running")
+	ErrStorageNotReady  = errors.New("OTS storage not initialized")
 	ErrBatchNotFound    = errors.New("batch not found")
 	ErrRUIDNotFound     = errors.New("RUID not found")
 )
@@ -47,7 +48,7 @@ func NewAPI(module ModuleInterface, store *storage.Store) *API {
 
 // Status returns the current status of the OTS module
 func (api *API) Status(ctx context.Context) (*StatusResult, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return &StatusResult{
 			Enabled: false,
 			Status:  "disabled",
@@ -57,7 +58,10 @@ func (api *API) Status(ctx context.Context) (*StatusResult, error) {
 	health := api.module.Health()
 	config := api.module.Config()
 
-	stats, _ := storage.NewIndexManager(api.store).GetBatchStats()
+	var stats *storage.BatchStats
+	if api.store != nil {
+		stats, _ = storage.NewIndexManager(api.store).GetBatchStats()
+	}
 
 	return &StatusResult{
 		Enabled:      true,
@@ -70,7 +74,7 @@ func (api *API) Status(ctx context.Context) (*StatusResult, error) {
 
 // Health returns detailed health status
 func (api *API) Health(ctx context.Context) (*ots.HealthStatus, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return &ots.HealthStatus{
 			Status: "disabled",
 		}, nil
@@ -82,8 +86,11 @@ func (api *API) Health(ctx context.Context) (*ots.HealthStatus, error) {
 
 // GetBatch returns batch information by ID
 func (api *API) GetBatch(ctx context.Context, batchID string) (*BatchResult, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return nil, ErrModuleNotRunning
+	}
+	if api.store == nil {
+		return nil, ErrStorageNotReady
 	}
 
 	meta, err := api.store.GetBatchMeta(batchID)
@@ -111,8 +118,11 @@ func (api *API) GetBatch(ctx context.Context, batchID string) (*BatchResult, err
 
 // GetBatchByDigest returns batch information by OTS digest
 func (api *API) GetBatchByDigest(ctx context.Context, digestHex string) (*BatchResult, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return nil, ErrModuleNotRunning
+	}
+	if api.store == nil {
+		return nil, ErrStorageNotReady
 	}
 
 	digestBytes, err := hexutil.Decode(digestHex)
@@ -133,8 +143,11 @@ func (api *API) GetBatchByDigest(ctx context.Context, digestHex string) (*BatchR
 
 // GetProof returns the Merkle proof for a RUID
 func (api *API) GetProof(ctx context.Context, ruidHex string, batchID string) (*ProofResult, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return nil, ErrModuleNotRunning
+	}
+	if api.store == nil {
+		return nil, ErrStorageNotReady
 	}
 
 	ruid := common.HexToHash(ruidHex)
@@ -173,8 +186,11 @@ func (api *API) GetProof(ctx context.Context, ruidHex string, batchID string) (*
 
 // GetPendingBatches returns all pending batches
 func (api *API) GetPendingBatches(ctx context.Context) ([]*BatchSummary, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return nil, ErrModuleNotRunning
+	}
+	if api.store == nil {
+		return nil, ErrStorageNotReady
 	}
 
 	indexMgr := storage.NewIndexManager(api.store)
@@ -199,7 +215,7 @@ func (api *API) GetPendingBatches(ctx context.Context) ([]*BatchSummary, error) 
 
 // VerifyRUID verifies that a RUID is included in an anchored batch
 func (api *API) VerifyRUID(ctx context.Context, ruidHex string) (*VerifyResult, error) {
-	if !api.module.IsRunning() {
+	if api.module == nil || !api.module.IsRunning() {
 		return nil, ErrModuleNotRunning
 	}
 

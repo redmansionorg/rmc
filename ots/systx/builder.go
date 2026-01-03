@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/ots"
+	otstypes "github.com/ethereum/go-ethereum/ots/types"
 )
 
 var (
@@ -51,11 +51,11 @@ func NewBuilder(contractAddress common.Address) *Builder {
 // BuildSystemTx constructs a system transaction for the given candidate batch.
 // The transaction has:
 // - from: coinbase (block producer)
-// - to: CopyrightRegistry contract
+// - to: OTSAnchor contract (0x9001)
 // - gasPrice: 0 (system transaction)
 // - data: updateOtsStatus(ruids, batchRoot, otsTimestamp, startBlock, endBlock)
 func (b *Builder) BuildSystemTx(
-	candidate *ots.CandidateBatch,
+	candidate *otstypes.CandidateBatch,
 	coinbase common.Address,
 	nonce uint64,
 	gasLimit uint64,
@@ -96,7 +96,7 @@ func (b *Builder) BuildSystemTx(
 }
 
 // encodeCalldata encodes the updateOtsStatus function call
-func (b *Builder) encodeCalldata(candidate *ots.CandidateBatch) ([]byte, error) {
+func (b *Builder) encodeCalldata(candidate *otstypes.CandidateBatch) ([]byte, error) {
 	// Manual ABI encoding for updateOtsStatus(bytes32[],bytes32,uint64,uint64,uint64)
 
 	// Calculate data size:
@@ -159,7 +159,7 @@ func (b *Builder) encodeCalldata(candidate *ots.CandidateBatch) ([]byte, error) 
 
 // ValidateCandidate validates a candidate batch before building a system transaction.
 // This performs the "double verification" by recomputing the MerkleRoot.
-func (b *Builder) ValidateCandidate(candidate *ots.CandidateBatch, computedRoot common.Hash) error {
+func (b *Builder) ValidateCandidate(candidate *otstypes.CandidateBatch, computedRoot common.Hash) error {
 	if candidate == nil || candidate.BatchMeta == nil {
 		return ErrInvalidCandidate
 	}

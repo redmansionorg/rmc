@@ -68,6 +68,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/ots"
+	otsrpc "github.com/ethereum/go-ethereum/ots/rpc"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
@@ -455,7 +456,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		otsConfig.Mode = ots.Mode(config.OTS.Mode)
 		otsConfig.DataDir = stack.ResolvePath(config.OTS.DataDir)
 		if config.OTS.ContractAddress != "" {
-			otsConfig.ContractAddress = common.HexToAddress(config.OTS.ContractAddress)
+			// Single address provided - use as CopyrightRegistry, derive OTSAnchor
+			otsConfig.CopyrightRegistryAddress = common.HexToAddress(config.OTS.ContractAddress)
+			// OTSAnchor is at the next address (0x9001 when Registry is 0x9000)
+			otsConfig.OTSAnchorAddress = common.HexToAddress("0x0000000000000000000000000000000000009001")
 		}
 		otsConfig.TriggerHour = config.OTS.TriggerHour
 		otsConfig.FallbackBlocks = config.OTS.FallbackBlocks
@@ -503,7 +507,7 @@ func (s *Ethereum) APIs() []rpc.API {
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
 	// Append all the local APIs and return
-	return append(apis, []rpc.API{
+	localAPIs := []rpc.API{
 		{
 			Namespace: "eth",
 			Service:   NewEthereumAPI(s),
@@ -526,7 +530,17 @@ func (s *Ethereum) APIs() []rpc.API {
 			Namespace: "net",
 			Service:   s.netRPCService,
 		},
-	}...)
+	}
+
+	// Add OTS API if module is enabled
+	if s.otsModule != nil {
+		localAPIs = append(localAPIs, rpc.API{
+			Namespace: "ots",
+			Service:   otsrpc.NewAPI(s.otsModule, nil), // store will be nil until storage is enabled
+		})
+	}
+
+	return append(apis, localAPIs...)
 }
 
 func (s *Ethereum) ResetWithGenesisBlock(gb *types.Block) {

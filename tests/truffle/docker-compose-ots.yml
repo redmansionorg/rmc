@@ -1,0 +1,91 @@
+version: "3"
+
+services:
+  genesis:
+    image: bsc-genesis
+    env_file: .env
+    environment:
+      NUMS_OF_VALIDATOR: 1
+    volumes:
+      - ./storage:/root/storage
+      - ./scripts:/root/scripts
+      - ./config:/root/config
+      - ./init-holders:/root/init-holders
+    command: /root/scripts/bootstrap.sh
+
+  bsc-rpc:
+    image: bsc
+    healthcheck:
+      test: nc -z localhost 8545
+      interval: 3s
+      timeout: 5s
+      retries: 15
+    env_file: .env
+    environment:
+      NODE_ID: bsc-rpc
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    volumes:
+      - ./storage/bsc-rpc:/root/.ethereum
+      - ./scripts:/scripts
+      - ./config:/config
+    entrypoint: [ "sh", "-c", "/scripts/bsc-rpc.sh" ]
+
+  bsc-validator1:
+    image: bsc
+    env_file: .env
+    environment:
+      NODE_ID: bsc-validator1
+      BOOTSTRAP_HOST: bsc-rpc
+    volumes:
+      - ./storage/bsc-validator1:/root/.ethereum
+      - ./scripts:/scripts
+    entrypoint: [ "sh", "-c", "/scripts/bsc-validator.sh" ]
+
+  ots-test:
+    image: curlimages/curl:latest
+    command: |
+      sh -c '
+        echo "=== OTS Contract Verification ==="
+        sleep 10
+
+        # Check CopyrightRegistry (0x9000)
+        echo "Checking CopyrightRegistry (0x9000)..."
+        CODE_9000=$$(curl -s -X POST -H "Content-Type: application/json" \
+          --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"0x0000000000000000000000000000000000009000\",\"latest\"],\"id\":1}" \
+          http://bsc-rpc:8545 | grep -o "result\":\"[^\"]*" | cut -d"\"" -f3)
+
+        if [ "$$CODE_9000" != "0x" ] && [ -n "$$CODE_9000" ]; then
+          echo "  CopyrightRegistry: DEPLOYED (code length: $${#CODE_9000})"
+        else
+          echo "  CopyrightRegistry: NOT DEPLOYED"
+          exit 1
+        fi
+
+        # Check OTSAnchor (0x9001)
+        echo "Checking OTSAnchor (0x9001)..."
+        CODE_9001=$$(curl -s -X POST -H "Content-Type: application/json" \
+          --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"0x0000000000000000000000000000000000009001\",\"latest\"],\"id\":1}" \
+          http://bsc-rpc:8545 | grep -o "result\":\"[^\"]*" | cut -d"\"" -f3)
+
+        if [ "$$CODE_9001" != "0x" ] && [ -n "$$CODE_9001" ]; then
+          echo "  OTSAnchor: DEPLOYED (code length: $${#CODE_9001})"
+        else
+          echo "  OTSAnchor: NOT DEPLOYED"
+          exit 1
+        fi
+
+        echo ""
+        echo "=== All OTS contracts deployed successfully ==="
+      '
+    depends_on:
+      bsc-rpc:
+        condition: service_healthy
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: 99.1.0.0/16

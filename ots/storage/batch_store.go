@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/ots"
+	"github.com/ethereum/go-ethereum/ots/types"
 )
 
 var (
@@ -80,7 +80,7 @@ func (s *Store) Close() error {
 }
 
 // SaveBatchMeta saves a batch meta (immutable, created once)
-func (s *Store) SaveBatchMeta(meta *ots.BatchMeta) error {
+func (s *Store) SaveBatchMeta(meta *types.BatchMeta) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -132,7 +132,7 @@ func (s *Store) SaveBatchMeta(meta *ots.BatchMeta) error {
 }
 
 // GetBatchMeta retrieves a batch meta by ID
-func (s *Store) GetBatchMeta(batchID string) (*ots.BatchMeta, error) {
+func (s *Store) GetBatchMeta(batchID string) (*types.BatchMeta, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -142,7 +142,7 @@ func (s *Store) GetBatchMeta(batchID string) (*ots.BatchMeta, error) {
 		return nil, ErrNotFound
 	}
 
-	var meta ots.BatchMeta
+	var meta types.BatchMeta
 	if err := json.Unmarshal(data, &meta); err != nil {
 		return nil, ErrCorrupted
 	}
@@ -151,7 +151,7 @@ func (s *Store) GetBatchMeta(batchID string) (*ots.BatchMeta, error) {
 }
 
 // SaveAttempt saves or updates an attempt
-func (s *Store) SaveAttempt(attempt *ots.Attempt) error {
+func (s *Store) SaveAttempt(attempt *types.Attempt) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -187,21 +187,21 @@ func (s *Store) SaveAttempt(attempt *ots.Attempt) error {
 }
 
 // GetAttempt retrieves an attempt by batch ID
-func (s *Store) GetAttempt(batchID string) (*ots.Attempt, error) {
+func (s *Store) GetAttempt(batchID string) (*types.Attempt, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.getAttemptUnlocked(batchID)
 }
 
-func (s *Store) getAttemptUnlocked(batchID string) (*ots.Attempt, error) {
+func (s *Store) getAttemptUnlocked(batchID string) (*types.Attempt, error) {
 	key := append(prefixAttempt, []byte(batchID)...)
 	data, err := s.db.Get(key)
 	if err != nil {
 		return nil, ErrNotFound
 	}
 
-	var attempt ots.Attempt
+	var attempt types.Attempt
 	if err := json.Unmarshal(data, &attempt); err != nil {
 		return nil, ErrCorrupted
 	}
@@ -233,7 +233,7 @@ func (s *Store) GetOTSProof(otsDigest [32]byte) ([]byte, error) {
 }
 
 // GetBatchesByStatus returns all batch IDs with the given status
-func (s *Store) GetBatchesByStatus(status ots.BatchStatus) ([]string, error) {
+func (s *Store) GetBatchesByStatus(status types.BatchStatus) ([]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -253,7 +253,7 @@ func (s *Store) GetBatchesByStatus(status ots.BatchStatus) ([]string, error) {
 }
 
 // GetBatchByDigest finds a batch by OTS digest
-func (s *Store) GetBatchByDigest(otsDigest [32]byte) (*ots.BatchMeta, error) {
+func (s *Store) GetBatchByDigest(otsDigest [32]byte) (*types.BatchMeta, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -310,11 +310,11 @@ func makeBlockIndexPrefix(blockNumber uint64) []byte {
 	return append(prefixBlockIndex, buf...)
 }
 
-func makeStatusIndexKey(status ots.BatchStatus, batchID string) []byte {
+func makeStatusIndexKey(status types.BatchStatus, batchID string) []byte {
 	prefix := makeStatusIndexPrefix(status)
 	return append(prefix, []byte(batchID)...)
 }
 
-func makeStatusIndexPrefix(status ots.BatchStatus) []byte {
+func makeStatusIndexPrefix(status types.BatchStatus) []byte {
 	return append(prefixStatusIndex, byte(status))
 }
